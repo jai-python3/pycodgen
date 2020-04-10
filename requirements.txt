@@ -1,0 +1,5 @@
+click==7.1.1
+colorama==0.4.3
+pkg-resources==0.0.0
+prompt-toolkit==3.0.5
+wcwidth==0.1.9
