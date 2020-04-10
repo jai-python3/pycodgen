@@ -28,6 +28,61 @@ yes_or_no_completer = WordCompleter(['yes', 'no'])
 datatype_completer = WordCompleter(['bool', 'dict', 'float', 'int', 'list', 'str'])
 
 
+def generate_function_code_from_file(infile: str = None, outfile: str = None) -> None:
+    """Generate the function code from the input file
+    :param infile: {str}
+    :param outfile: {str}
+    :returns None:
+    """
+
+    logging.info("Going to parse input file '{}'".format(infile))
+
+    function_name = None
+    function_type = None
+    return_type = None
+    parameter_list = []
+    parameter_lookup = {}
+
+    with open(infile, 'r') as fh:
+
+        for line in fh:
+
+            line = line.strip()
+            
+            if line.startswith('#'):
+                continue
+            if line.startswith('function_name:'):
+                function_name = line.replace('function_name:', '')
+                continue
+            if line.startswith('function_type:'):
+                function_type = line.replace('function_type:', '')
+                continue
+            if line.startswith('return_type:'):
+                return_type = line.replace('return_type:', '')
+                continue
+            if line.startswith('param:'):
+                logging.info("Found param line '{}'".format(line))
+                param = line.replace('param:', '')
+                parts = param.split(':')
+                param_name = parts[0]
+                datatype = parts[1]
+                default = parts[2]
+                desc = parts[3]
+                logging.info("Found param '{}' datatype '{}' default '{}' description '{}'".format(param_name, datatype, default, desc))
+                if param_name in parameter_lookup:
+                    logging.warning("parameter '{}' was already encountered - going to ignore it now".format(param_name))
+                    print("parameter '{}' was already encountered - going to ignore it now".format(param_name))
+                    continue
+                else:
+                    parameter_lookup[param_name] = {}
+                    parameter_list.append(param_name)
+                parameter_lookup[param_name]['datatype'] = datatype
+                parameter_lookup[param_name]['default'] = default
+                parameter_lookup[param_name]['description'] = desc
+
+    write_function(function_name, function_type, parameter_list, parameter_lookup, return_type, outfile)
+
+
 def get_function_name() -> str:
     """Prompt the user for the name of the function
     :returns function_name: {str}
@@ -47,7 +102,7 @@ def get_function_name() -> str:
 
 
 def get_function_type() -> None:
-    """Prompt the user for the type of function 
+    """Prompt the user for the type of function
     i.e.: function or method
     :return function_type: {str}
     """
@@ -102,7 +157,7 @@ def generate_function_code(outfile: str = None) -> None:
     run = True
 
     while run:
-    
+
         function_name = get_function_name()
         function_type = get_function_type()
         return_type = get_return_type()
@@ -116,9 +171,9 @@ def generate_function_code(outfile: str = None) -> None:
         if has_parameters.lower() == 'y':
 
             more_parameters = True
-            
+
             while more_parameters:
-                
+
                 parameter_name = None
                 while parameter_name is None:
                     parameter_name = input("parameter name? ")
@@ -133,7 +188,7 @@ def generate_function_code(outfile: str = None) -> None:
                             parameter_list.append(parameter_name)
                             parameter_lookup[parameter_name] = {}
                             break
-                
+
                 parameter_datatype = None
                 while parameter_datatype is None:
                     parameter_datatype = prompt("datatype? [bool|dict|float|int|list|str]: ", completer=datatype_completer)
@@ -210,7 +265,7 @@ def write_function(function_name, function_type, parameter_list, parameter_looku
     content.append("    '''\n")
     content.append("    {}\n".format("\n    ".join(formatted_param_desc_list)))
     content.append("    '''\n")
-    
+
     for parameter_name in parameter_list:
         if 'file' in parameter_name:
             if 'outfile' in parameter_name:
@@ -237,19 +292,20 @@ def write_function(function_name, function_type, parameter_list, parameter_looku
 @click.command()
 @click.option('--outdir', help='The output directory - default is {}'.format(DEFAULT_OUTDIR))
 @click.option('--outfile', help='The output file - if not specified a default will be assigned')
+@click.option('--infile', help='The input file')
 @click.option('--logfile', help="The log file - if not is specified a default will be assigned")
 @click.option('--verbose', is_flag=True, help="Whether to execute in verbose mode - default is {}".format(DEFAULT_VERBOSE))
-def main(outdir, outfile, logfile, verbose):
+def main(outdir, outfile, infile, logfile, verbose):
     """Prompt the user and generate a Python function code
     """
 
     error_ctr = 0
-    
+
     if error_ctr > 0:
         print(Fore.RED + "Required command-line arguments were not specified")
         print(Style.RESET_ALL + '', end='')
         sys.exit(1)
-        
+
     if verbose is None:
         verbose = DEFAULT_VERBOSE
         print(Fore.YELLOW + "--verbose was not specified and therefore was set to default '{}'".format(verbose))
@@ -286,11 +342,19 @@ def main(outdir, outfile, logfile, verbose):
     assert isinstance(outfile, str)
 
 
-    logging.basicConfig(filename=logfile, 
-                    format=LOGGING_FORMAT, 
+    logging.basicConfig(filename=logfile,
+                    format=LOGGING_FORMAT,
                     level=LOG_LEVEL)
 
-    generate_function_code(outfile)    
+    if infile is not None and infile != '':
+        if not os.path.exists(infile):
+            print(Fore.RED + "infile '{}' does not exist".format(infile))
+            print(Style.RESET_ALL + '', end='')
+            sys.exit(1)
+    
+        generate_function_code_from_file(infile, outfile)
+    else:
+        generate_function_code(outfile)
 
 
 if __name__ == "__main__":

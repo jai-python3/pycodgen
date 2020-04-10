@@ -1,0 +1,5 @@
+function_name:convert
+function_type:function
+return_type:bool
+param:infile:str:None:the input file
+param:outfile:str:/tmp/output.txt:the output file
