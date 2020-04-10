@@ -184,6 +184,19 @@ def write_function(function_name, function_type, parameter_list, parameter_looku
     content.append("    {}\n".format("\n    ".join(formatted_param_desc_list)))
     content.append("    '''\n")
 
+
+    for parameter_name in parameter_list:
+        if 'file' in parameter_name:
+            if 'outfile' in parameter_name:
+                continue
+            else:
+                content.append("    if {} is None or {} == '':\n".format(parameter_name, parameter_name))
+                content.append("        logging.error('{}' is not defined)\n".format(parameter_name))
+                content.append("        sys.exit(1)\n")
+                content.append("    if not os.path.exists({}):\n".format(parameter_name))
+                content.append("        logging.error(file '{}' does not exist)\n".format(parameter_name))
+                content.append("        sys.exit(1)\n")
+
     with open(outfile, 'w') as fh:
         for line in content:
             fh.write(line)
