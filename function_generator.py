@@ -45,6 +45,7 @@ def get_function_name() -> str:
 
     return function_name
 
+
 def get_function_type() -> None:
     """Prompt the user for the type of function 
     i.e.: function or method
@@ -69,6 +70,24 @@ def get_function_type() -> None:
 
     return function_type
 
+
+def get_return_type() -> None:
+    """Prompt the user for the return datatype of the function
+    :return return_type: {str}
+    """
+
+    return_type = None # function or method
+
+    while return_type is None or return_type == '':
+        return_type = prompt("return type? [bool|dict|float|int|list|str]: ", completer=datatype_completer)
+        return_type = return_type.strip()
+        if return_type is None or return_type == '':
+            return_type = 'None'
+        break
+
+    return return_type
+
+
 def generate_function_code(outfile: str = None) -> None:
     """Generate the function code
     :param outfile: {str}
@@ -81,9 +100,12 @@ def generate_function_code(outfile: str = None) -> None:
     parameter_lookup = {}
 
     run = True
+
     while run:
+    
         function_name = get_function_name()
         function_type = get_function_type()
+        return_type = get_return_type()
 
         while has_parameters is None or has_parameters == '':
             has_parameters = prompt('Has parameter(s)? [(Y)es|(n)o] ', completer=yes_or_no_completer)
@@ -152,14 +174,16 @@ def generate_function_code(outfile: str = None) -> None:
                     more_parameters = False
         run = False
 
-    write_function(function_name, function_type, parameter_list, parameter_lookup, outfile)
+    write_function(function_name, function_type, parameter_list, parameter_lookup, return_type, outfile)
 
-def write_function(function_name, function_type, parameter_list, parameter_lookup, outfile):
+
+def write_function(function_name, function_type, parameter_list, parameter_lookup, return_type, outfile):
     """Write the function code to the output file
     :param function_name: {str}
     :param function_type: {str}
     :param parameter_list: {list}
     :param parameter_lookup: {dict}
+    :param return_type: {str}
     :param outfile: {str}
     """
     formatted_param_list = []
@@ -173,18 +197,20 @@ def write_function(function_name, function_type, parameter_list, parameter_looku
             formatted_param_list.append('{}: {} = {}'.format(parameter_name, datatype, default))
             formatted_param_desc_list.append(':param {}: {{{}}} - {}'.format(parameter_name, datatype, description))
 
+    formatted_param_desc_list.append(':returns var: {{{}}} - '.format(return_type))
+
     content = []
 
     if function_type == 'method':
         content.append('def {}(self, '.format(function_name))
     else:
         content.append('def {}('.format(function_name))
-    content.append("{}):\n".format(", ".join(formatted_param_list)))
+
+    content.append("{}) -> {}:\n".format(", ".join(formatted_param_list), return_type))
     content.append("    '''\n")
     content.append("    {}\n".format("\n    ".join(formatted_param_desc_list)))
     content.append("    '''\n")
-
-
+    
     for parameter_name in parameter_list:
         if 'file' in parameter_name:
             if 'outfile' in parameter_name:
@@ -196,6 +222,9 @@ def write_function(function_name, function_type, parameter_list, parameter_looku
                 content.append("    if not os.path.exists({}):\n".format(parameter_name))
                 content.append("        logging.error(file '{}' does not exist)\n".format(parameter_name))
                 content.append("        sys.exit(1)\n")
+
+    if not return_type == 'None':
+        content.append("\n    return var\n")
 
     with open(outfile, 'w') as fh:
         for line in content:
