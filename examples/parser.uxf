@@ -3,8 +3,30 @@
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>20</x>
-      <y>20</y>
+      <x>60</x>
+      <y>240</y>
+      <w>360</w>
+      <h>140</h>
+    </coordinates>
+    <panel_attributes>biohack.outbreak.protocols_io.converter.Converter
+//import logging
+//import os
+//from datetime import datetime
+//from biohack.outbreak.protocols_io.parser import Parser
+--
+infile
+outfile
+--
+convert(infile:str=None,outfile:str=None)-&gt; None:
+_calculate_average(numbers:list=[]) -&gt; float:
+ </panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>40</x>
+      <y>40</y>
       <w>360</w>
       <h>140</h>
     </coordinates>
@@ -16,8 +38,8 @@
 infile
 outfile
 --
-getLookup(infile:str=None,count:int=0)->dict:
-_parse_file(infile:str=None) -> None:
+getLookup(infile:str=None,count:int=0)-&gt;dict:
+_parse_file(infile:str=None) -&gt; None:
  </panel_attributes>
     <additional_attributes/>
   </element>
