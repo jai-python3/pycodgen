@@ -200,13 +200,46 @@ def create_class_definition(package_name, class_desc, inherits_from_class, impor
             fh.write("            self._{} = kwargs['{}']\n\n".format(attribute, attribute))
         fh.write("\n")
 
+        insert_check_file_status_private_method = False
+
         for method in method_list:
-            method_name, formatted_params, param_desc_list, return_type = get_param_desc_list(method)            
+            method_name, formatted_params, param_desc_list, return_type, params_name_list = get_param_desc_list(method)            
             fh.write("    def {}(self, {}) -> {}:\n".format(method_name, formatted_params, return_type))
             fh.write("        '''INSERT DESCRIPTION HERE\n")
             for param_desc in param_desc_list:
                 fh.write("        :param {}: {{{}}} -\n".format(param_desc['param_name'], param_desc['datatype']))
             fh.write("        '''\n\n")
+
+            for param_name in params_name_list:
+                if 'file' in param_name:
+                    if 'outfile' not in param_name:
+                        fh.write("        self._check_infile_status({})\n\n".format(param_name))
+                        insert_check_file_status_private_method = True
+
+
+        #! Move this to a Jinja2 template soon
+        fh.write("    def _check_infile_status(self, infile: str = None) -> None:\n")
+        fh.write("        '''Check the input file for the following:\n")
+        fh.write("        1) does the file variable defined\n")
+        fh.write("        2) does the file exist\n")
+        fh.write("        3) does the file a regular file or a file symlink\n")
+        fh.write("        4) does the file have content\n")
+        fh.write("        :param infile: {str} - input file to check status of\n")
+        fh.write("        '''\n\n")
+        fh.write("        if {} is None or {} == '':\n".format(param_name, param_name))
+        fh.write("            logging.error(\"'{{}}' is not defined'\".format({}))\n".format(param_name))
+        fh.write("            sys.exit(1)\n\n")
+        fh.write("        if not os.path.exists({}):\n".format(param_name))
+        fh.write("            logging.error(\"file '{{}}' does not exist'\".format({}))\n".format(param_name))
+        fh.write("            sys.exit(1)\n\n")
+        fh.write("        if not os.path.isfile({}):\n".format(param_name))
+        fh.write("            logging.error(\"'{{}}' is not a regular file or a symlink to a file\".format({}))\n".format(param_name))
+        fh.write("            sys.exit(1)\n\n")
+        fh.write("        if not os.stat({}) == 0:\n".format(param_name))
+        fh.write("            logging.error(\"file '{{}}' has no content\".format({}))\n".format(param_name))
+        fh.write("            sys.exit(1)\n\n")
+
+
     
     print("Wrote output file '{}'".format(outfile))
 
@@ -221,9 +254,11 @@ def get_param_desc_list(line):
     
     param_details_list = []
     params = []
+    params_name_list = []
     for param_details in split3:
         param_name, type_default = param_details.split(':')
         param_name = param_name.strip()
+        params_name_list.append(param_name)
         datatype, default = type_default.split('=')
         datatype = datatype.strip()
         default = default.strip()
@@ -238,7 +273,7 @@ def get_param_desc_list(line):
     if return_type.endswith(':'):
         return_type =  return_type.replace(':', '')
     
-    return method_name, formatted_params, param_details_list, return_type
+    return method_name, formatted_params, param_details_list, return_type, params_name_list
 
 
 
