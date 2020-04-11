@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?><diagram program="umlet" version="13.3">
+  <zoom_level>10</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>20</x>
+      <y>20</y>
+      <w>360</w>
+      <h>140</h>
+    </coordinates>
+    <panel_attributes>biohack.outbreak.protocols_io.parser.Parser
+//import logging
+//import os
+//from datetime import datetime
+--
+infile
+outfile
+--
+getLookup(infile:str=None,count:int=0)->dict:
+_parse_file(infile:str=None) -> None:
+ </panel_attributes>
+    <additional_attributes/>
+  </element>
+</diagram>
