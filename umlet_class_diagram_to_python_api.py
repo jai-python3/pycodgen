@@ -6,10 +6,12 @@ import logging
 import shutil
 import calendar
 import time
+import xml.etree.ElementTree as ET
+
+from pathlib import Path
 from colorama import Fore, Style
 from datetime import datetime
 from datetime import date
-import xml.etree.ElementTree as ET
 
 DEFAULT_VERBOSE = False
 
@@ -123,9 +125,18 @@ def create_class_definition(package_name, class_desc, import_list, attribute_lis
     dirname = '/'.join(dirname_list)
     
     logging.info("dirname '{}'".format(dirname))
-    
+
     if not os.path.exists(dirname):
         pathlib.Path(dirname).mkdir(parents=True, exist_ok=True)
+
+    cumulative_path = ''
+    for dir in dirname_list:
+        cumulative_path += dir + '/'
+        file = cumulative_path + '__init__.py'
+        logging.info("Will check for file '{}'".format(file))
+        if not os.path.exists(file):
+            Path(file).touch()
+            logging.info("touched file '{}'".format(file))
 
     outfile = os.path.join(dirname, filename + '.py')        
     if os.path.exists(outfile):
