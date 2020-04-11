@@ -13,6 +13,7 @@
 //import os
 //from datetime import datetime
 //from biohack.outbreak.protocols_io.parser import Parser
+//inherits:biohack.outbreak.bioschemas.converter.Converter
 --
 infile
 outfile

@@ -41,11 +41,12 @@ def convert(infile: str = None, outfile: str = None) -> None:
     """
     panel_attributes_list = get_panel_attributes_list(infile)
 
-    for panel_attributes in panel_attributes_list:
+    for pa_attrib_ctr, panel_attributes in enumerate(panel_attributes_list, 1):
         
+    
         content = panel_attributes.text
         
-        logging.info("content '{}'".format(content))        
+        logging.info("Here is the content for panel_attributes number '{}' '{}'".format(content, pa_attrib_ctr))        
         # print("content '{}'".format(content))        
     
         package_name = None
@@ -53,7 +54,7 @@ def convert(infile: str = None, outfile: str = None) -> None:
         import_list = []
         attribute_list = []
         method_list = []
-        
+        inherits_from_class = None
         
         in_attribute_section = False
         in_method_section = False
@@ -65,11 +66,15 @@ def convert(infile: str = None, outfile: str = None) -> None:
             line = line.strip()
             if line_ctr == 1:
                 package_name = line
-                logging.info("Found packge name '{}'".format(package_name))
+                logging.info("Found package name '{}'".format(package_name))
                 continue
             if line.startswith('//desc:'):
                 class_desc = line.replace('//desc:', '')
                 logging.info("Found class description '{}'".format(class_desc))
+                continue
+            if line.startswith('//inherits:'):
+                inherits_from_class = line.replace('//inherits:', '')
+                logging.info("Found inherits '{}'".format(inherits_from_class))
                 continue
             if line.startswith('//import') or line.startswith('//from'):
                 line = line.replace('//', '')
@@ -101,12 +106,12 @@ def convert(infile: str = None, outfile: str = None) -> None:
                 logging.error("Don't know what to do with '{}' at line number '{}'".format(line, line_ctr))
                 continue
         
-        print("Parsed '{}' lines".format(line_ctr))
+        print("Parsed '{}' lines in panel_attributes number '{}' for package '{}'".format(line_ctr, pa_attrib_ctr, package_name))
 
-        create_class_definition(package_name, class_desc, import_list, attribute_list, method_list)
+        create_class_definition(package_name, class_desc, inherits_from_class, import_list, attribute_list, method_list)
             
 
-def create_class_definition(package_name, class_desc, import_list, attribute_list, method_list):
+def create_class_definition(package_name, class_desc, inherits_from_class, import_list, attribute_list, method_list):
     """
     """
     path = package_name.split('.')
@@ -147,8 +152,27 @@ def create_class_definition(package_name, class_desc, import_list, attribute_lis
     with open(outfile, 'w') as fh:
         for line in import_list:
             fh.write("{}\n".format(line))
-        fh.write("\n\n")
-        fh.write("class {}():\n".format(class_name))
+
+        if inherits_from_class is not None:
+            # E.g.: inherits_from_class = some.package.namespace.Converter
+
+            inherits_parts = inherits_from_class.split('.')
+            # e.g.: inherits_parts will be ['some', 'package', 'namespace', 'Converter']
+
+            base_class_name = inherits_parts[-1] 
+            # e.g.: base_class_name will be Converter
+            
+            inherits_import = inherits_from_class.replace('.' + base_class_name, '')  
+            # e.g.: inherits_import will be some.package.namespace
+
+            fh.write("from {} import {}\n".format(inherits_import, base_class_name))
+
+            fh.write("\n\n")
+            fh.write("class {}({}):\n".format(class_name, base_class_name))
+        else:
+            fh.write("\n\n")
+            fh.write("class {}():\n".format(class_name))
+
         fh.write("    '''{}\n".format(class_desc))
         fh.write("    '''\n\n")
         fh.write("    def __init__(self, **kwargs):\n")
@@ -167,7 +191,10 @@ def create_class_definition(package_name, class_desc, import_list, attribute_lis
             for param_desc in param_desc_list:
                 fh.write("        :param {}: {{{}}} -\n".format(param_desc['param_name'], param_desc['datatype']))
             fh.write("        '''\n\n")
+    
+    print("Wrote output file '{}'".format(outfile))
 
+    
 def get_param_desc_list(line):
     """
     """
