@@ -9,6 +9,7 @@
       <h>140</h>
     </coordinates>
     <panel_attributes>biohack.outbreak.protocols_io.converter.Converter
+//singleton
 //import logging
 //import os
 //from datetime import datetime

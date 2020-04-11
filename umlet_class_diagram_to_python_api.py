@@ -55,6 +55,7 @@ def convert(infile: str = None, outfile: str = None) -> None:
         attribute_list = []
         method_list = []
         inherits_from_class = None
+        is_singleton = False
         
         in_attribute_section = False
         in_method_section = False
@@ -67,6 +68,10 @@ def convert(infile: str = None, outfile: str = None) -> None:
             if line_ctr == 1:
                 package_name = line
                 logging.info("Found package name '{}'".format(package_name))
+                continue
+            if line.startswith('//singleton'):
+                is_singleton = True
+                logging.info("Found indication that this class is a singleton")
                 continue
             if line.startswith('//desc:'):
                 class_desc = line.replace('//desc:', '')
@@ -108,10 +113,10 @@ def convert(infile: str = None, outfile: str = None) -> None:
         
         print("Parsed '{}' lines in panel_attributes number '{}' for package '{}'".format(line_ctr, pa_attrib_ctr, package_name))
 
-        create_class_definition(package_name, class_desc, inherits_from_class, import_list, attribute_list, method_list)
+        create_class_definition(package_name, class_desc, inherits_from_class, import_list, attribute_list, method_list, is_singleton)
             
 
-def create_class_definition(package_name, class_desc, inherits_from_class, import_list, attribute_list, method_list):
+def create_class_definition(package_name, class_desc, inherits_from_class, import_list, attribute_list, method_list, is_singleton):
     """
     """
     path = package_name.split('.')
@@ -153,6 +158,9 @@ def create_class_definition(package_name, class_desc, inherits_from_class, impor
         for line in import_list:
             fh.write("{}\n".format(line))
 
+        if is_singleton:
+            fh.write("from singleton_decorator import singleton\n")
+
         if inherits_from_class is not None:
             # E.g.: inherits_from_class = some.package.namespace.Converter
 
@@ -168,9 +176,17 @@ def create_class_definition(package_name, class_desc, inherits_from_class, impor
             fh.write("from {} import {}\n".format(inherits_import, base_class_name))
 
             fh.write("\n\n")
+
+            if is_singleton:
+                fh.write("@singleton\n")
+
             fh.write("class {}({}):\n".format(class_name, base_class_name))
         else:
             fh.write("\n\n")
+
+            if is_singleton:
+                fh.write("@singleton\n")
+
             fh.write("class {}():\n".format(class_name))
 
         fh.write("    '''{}\n".format(class_desc))
@@ -194,7 +210,7 @@ def create_class_definition(package_name, class_desc, inherits_from_class, impor
     
     print("Wrote output file '{}'".format(outfile))
 
-    
+
 def get_param_desc_list(line):
     """
     """
